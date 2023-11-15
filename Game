@@ -1,0 +1,391 @@
+import pygame
+import math
+pygame.init()
+
+pygame.display.set_caption("Haxball 2")
+ICONO = pygame.image.load("imagenes/Haxball_logo(1).png")
+pygame.display.set_icon(ICONO)
+
+playeryspeed = 0
+playery = 350
+playerx = 1100
+playerxspeed = 0
+
+playeryspeed2 = 0
+playerxspeed2 = 0
+playery2 = 350
+playerx2 = 200
+
+pelotax = 645
+pelotay = 360
+pelotaspeedx = 3
+pelotaspeedy = 3
+
+
+tamanio = (1280, 720)
+screen = pygame.display.set_mode(tamanio)
+clock = pygame.time.Clock()
+
+# Jugadores
+jugador1_img = pygame.image.load("imagenes/Beto Cárdenas - Monobloque.png")
+jugador2_img = pygame.image.load("imagenes/janos.png")
+# Pelota
+pelota_img = pygame.image.load("imagenes/pelota.png")
+
+# Dimensiones de los arcos
+arco_width = 500
+arco_height = 500
+
+# Posiciones de los arcos
+arco1_x = -155
+arco1_y = 115
+
+arco2_x = 928
+arco2_y = 125
+
+# Imágenes de los arcos
+arco1_img = pygame.image.load("imagenes/arcoizq.png")
+arco2_img = pygame.image.load("imagenes/arcoder.png")
+
+# Redimensionar las imágenes de los arcos
+new_arco_size = (arco_width, arco_height)
+arco1_img = pygame.transform.scale(arco1_img, new_arco_size)
+arco2_img = pygame.transform.scale(arco2_img, new_arco_size)
+
+# Modify size
+new_player1_size = (235, 100)
+new_player2_size = (250, 100)
+new_pelota_size = (25, 25)
+
+# Resize
+jugador1_img = pygame.transform.scale(jugador1_img, new_player1_size)
+jugador2_img = pygame.transform.scale(jugador2_img, new_player2_size)
+pelota_img = pygame.transform.scale(pelota_img, new_pelota_size)
+
+# Fondo del juego
+fondo = pygame.image.load("imagenes/estadio.jpg")
+screen.blit(fondo, (0, 0))
+ball_fixed = True
+gameover = False
+friction = 0.99
+ball_radius = 7
+player_radius = 20
+player1_keys = set()
+player2_keys = set()
+font_path = "fonts/PressStart2P-Regular.ttf"
+font_goal = pygame.font.Font(font_path, 38)
+
+# Animación del gol (Jugador 1)
+goal_text = font_goal.render("Gol del Jugador 1", True, (255, 0, 0))
+goal2_text = font_goal.render("Gol del Jugador 2", True, (255, 0, 0))
+goal_text_rect = goal_text.get_rect(center=(500 // 2, 500 // 2))
+show_goal_text = False
+show_goal_text_player2 = False
+goal_text_duration = 2000
+score_player1 = 0
+score_player2 = 0
+
+
+def mostrar_marcador():
+    # Crear una superficie con fondo gris y transparencia
+    fondo_superficie = pygame.Surface((200, 50), pygame.SRCALPHA)
+    pygame.draw.rect(fondo_superficie, (128, 128, 128, 150), (0, 0, 200, 50))  # Gris con transparencia
+
+    # Blit (copiar) la superficie en la pantalla
+    screen.blit(fondo_superficie, (550, 10))
+
+    # Renderizar el encabezado
+    font_encabezado = pygame.font.Font(font_path, 16)
+    encabezado_text = font_encabezado.render("", True, (0, 0, 0))
+    screen.blit(encabezado_text, (530, 15))  # Puedes ajustar la posición
+
+    # Renderizar el texto del marcador
+    font_marcador = pygame.font.Font(font_path, 26)
+    marcador_text = font_marcador.render(f"{score_player1} - {score_player2}", True, (0, 0, 0))
+    screen.blit(marcador_text, (590, 20))
+
+
+def check_goal_collision(player_x, player_y, goal_rect):
+    return goal_rect.collidepoint(player_x, player_y)
+
+
+# Funcionalidad de los arcos
+goal_rect1 = pygame.Rect(65, 273, 50, 165)
+goal_rect2 = pygame.Rect(1180, 273, 50, 165)
+
+
+def reiniciar_jugador1():
+    return 1170, 350
+
+
+def reiniciar_jugador2():
+    return 170, 350
+
+
+def reiniciar_pelota():
+    return 645, 360, 0, 0
+
+
+def saquearco1():
+    return 200, 360, 0, 0
+
+
+def saquearco2():
+    return 1100, 360, 0, 0
+
+
+# Check if the ball is in a fixed state
+while not gameover:
+    # Detección de colisión de la pelota con los arcos invisibles
+    if goal_rect1.colliderect(pelotax, pelotay, 1, 1):  # 1, 1 son dimensiones pequeñas, ajusta según sea necesario
+        # Reiniciar la posición de la pelota
+        pelotax, pelotay, pelotaspeedx, pelotaspeedy = reiniciar_pelota()
+        # Reiniciar posición Jugadores
+        playerx, playery = reiniciar_jugador1()
+        playerx2, playery2 = reiniciar_jugador2()
+        # Texto de gol
+        show_goal_text = True
+        start_time = pygame.time.get_ticks()
+        score_player1 += 1
+
+    if goal_rect2.colliderect(pelotax, pelotay, 1, 1):  # 1, 1 son dimensiones pequeñas, ajusta según sea necesario
+        # Reiniciar la posición de la pelota
+        pelotax, pelotay, pelotaspeedx, pelotaspeedy = reiniciar_pelota()
+        # Reiniciar posición Jugadores
+        playerx, playery = reiniciar_jugador1()
+        playerx2, playery2 = reiniciar_jugador2()
+        # Texto de gol
+        show_goal_text_player2 = True
+        start_time_player2 = pygame.time.get_ticks()
+        score_player2 += 1
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            gameover = True
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                playeryspeed = -3
+            if event.key == pygame.K_DOWN:
+                playeryspeed = 3
+            if event.key == pygame.K_LEFT:
+                playerxspeed = -3
+            if event.key == pygame.K_RIGHT:
+                playerxspeed = 3
+            if event.key == pygame.K_a:
+                playerxspeed2 = -3
+            if event.key == pygame.K_d:
+                playerxspeed2 = 3
+
+            if event.key == pygame.K_w:
+                playeryspeed2 = -3
+            if event.key == pygame.K_s:
+                playeryspeed2 = 3
+
+            if event.key == pygame.K_k:
+                player1_keys.add(pygame.K_k)
+            if event.key == pygame.K_v:
+                player2_keys.add(pygame.K_v)
+
+            #  Player 1 kick (use 'K' key)
+            if pygame.K_k in player1_keys:
+                # Check proximity to the ball
+                distance_threshold = 15
+                distance = ((pelotax - playerx) ** 2 + (pelotay - playery) ** 2) ** 0.5
+                ball_fixed = False
+                if distance <= player_radius + ball_radius + distance_threshold:
+                    kick_impulse = 1.8
+                    pelotaspeedx += kick_impulse * playerxspeed
+                    pelotaspeedy += kick_impulse * playeryspeed
+                    collision_dir = ((playerx2 - pelotax) * -1, (playery2 - pelotay) * -1)
+                    length = math.sqrt(collision_dir[0] ** 2 + collision_dir[1] ** 2)
+
+            # Player 2 kick (use 'V' key)
+            if pygame.K_v in player2_keys:
+                # Check proximity to the ball
+                distance_threshold = 15
+                distance = ((pelotax - playerx2) ** 2 + (pelotay - playery2) ** 2) ** 0.5
+                ball_fixed = False
+                if distance <= player_radius + ball_radius + distance_threshold:
+                    kick_impulse = 1.8
+                    pelotaspeedx += kick_impulse * playerxspeed2
+                    pelotaspeedy += kick_impulse * playeryspeed2
+                    collision_dir = ((playerx2 - pelotax) * -1, (playery2 - pelotay) * -1)
+                    length = math.sqrt(collision_dir[0] ** 2 + collision_dir[1] ** 2)
+
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_UP:
+                playeryspeed = 0
+            if event.key == pygame.K_DOWN:
+                playeryspeed = 0
+            if event.key == pygame.K_LEFT:
+                playerxspeed = 0
+            if event.key == pygame.K_RIGHT:
+                playerxspeed = 0
+
+            if event.key == pygame.K_a:
+                playerxspeed2 = 0
+            if event.key == pygame.K_d:
+                playerxspeed2 = 0
+
+            if event.key == pygame.K_w:
+                playeryspeed2 = 0
+            if event.key == pygame.K_s:
+                playeryspeed2 = 0
+
+            if event.key == pygame.K_k:
+                player1_keys.discard(pygame.K_k)
+            if event.key == pygame.K_v:
+                player2_keys.discard(pygame.K_v)
+
+        if ball_fixed:
+            # If fixed, set the ball's position to its spawn point
+            pelotax, pelotay, pelotaspeedx, pelotaspeedy = reiniciar_pelota()
+
+        # En la sección de eventos del bucle principal
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                playerxspeed = -3  # Configura la velocidad horizontal del jugador 1 hacia la izquierda
+            if event.key == pygame.K_RIGHT:
+                playerxspeed = 3  # Configura la velocidad horizontal del jugador 1 hacia la derecha
+
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                playerxspeed = 0  # Detén el movimiento horizontal del jugador 1
+            if event.key == pygame.K_RIGHT:
+                playerxspeed = 0  # Detén el movimiento horizontal del jugador 1
+
+    if pelotay > 720 or pelotay < 7:
+        pelotaspeedy *= -1
+
+    if pelotax > 1280:
+        # pelotax = 400
+        # pelotay = 300
+
+        pelotaspeedx *= -1
+        pelotaspeedy *= 1
+
+    if pelotax < 0:
+        # pelotax = 400
+        # pelotay = 300
+
+        pelotaspeedx *= -1
+        pelotaspeedy *= 1
+
+    playery += playeryspeed
+    playerx += playerxspeed
+    playery2 += playeryspeed2
+    playerx2 += playerxspeed2
+
+    pelotax += pelotaspeedx
+    pelotay += pelotaspeedy
+
+    if playerx < 135:
+        playerx = 135
+    elif playerx > 1410 - jugador1_img.get_width():
+        playerx = 1410 - jugador1_img.get_width()
+
+    if playery < 15:
+        playery = 15
+    elif playery > 785 - jugador1_img.get_height():
+        playery = 785 - jugador1_img.get_height()
+
+    # Verifica y ajusta los límites para el jugador 2
+    if playerx2 < 135:
+        playerx2 = 135
+    elif playerx2 > 1410 - jugador2_img.get_width():
+        playerx2 = 1410 - jugador2_img.get_width()
+
+    if playery2 < 15:
+        playery2 = 15
+    elif playery2 > 785 - jugador2_img.get_height():
+        playery2 = 785 - jugador2_img.get_height()
+
+    # Verifica y ajusta los límites para el jugador 2
+    if pelotax < 100:
+        pelotax, pelotay, pelotaspeedx, pelotaspeedy = saquearco1()
+        playerx, playery = reiniciar_jugador1()
+        playerx2, playery2 = reiniciar_jugador2()
+    elif pelotax > 1450 - jugador2_img.get_width():
+        pelotax, pelotay, pelotaspeedx, pelotaspeedy = saquearco2()
+        playerx, playery = reiniciar_jugador1()
+        playerx2, playery2 = reiniciar_jugador2()
+
+    screen.blit(fondo, (0, 0))
+
+    screen.blit(jugador1_img, (playerx - jugador1_img.get_width() // 2, playery - jugador1_img.get_height() // 2))
+    screen.blit(jugador2_img, (playerx2 - jugador2_img.get_width() // 2, playery2 - jugador2_img.get_height() // 2))
+    screen.blit(pelota_img, (pelotax - pelota_img.get_width() // 2, pelotay - pelota_img.get_height() // 2))
+    screen.blit(arco1_img, (arco1_x, arco1_y))
+    screen.blit(arco2_img, (arco2_x, arco2_y))
+
+    # if pelota.colliderect(jug1) or pelota.colliderect(jug2):
+    #    pelotaspeedx *= -1
+
+    # Detectar colisión con el jugador2
+    distance = ((pelotax - playerx2) ** 2 + (pelotay - playery2) ** 2) ** 0.5
+    if distance <= player_radius + ball_radius:
+        # Calcular la dirección de la colisión
+        collision_dir = ((playerx2 - pelotax) * -1, (playery2 - pelotay) * -1)
+        length = math.sqrt(collision_dir[0] ** 2 + collision_dir[1] ** 2)
+
+        if length != 0:
+            # Normalizar el vector de colisión
+            collision_dir = (collision_dir[0] / length, collision_dir[1] / length)
+
+            # Aplicar un impulso a la pelota en la dirección de la colisión
+            impulse = 1  # Puedes ajustar este valor según la fuerza deseada
+            pelotaspeedx += impulse * collision_dir[0]
+            pelotaspeedy += impulse * collision_dir[1]
+
+        # Aplicar fricción
+        pelotaspeedx *= friction
+        pelotaspeedy *= friction
+
+        # Detectar colisión con el jugador 1
+    distance = ((pelotax - playerx) ** 2 + (pelotay - playery) ** 2) ** 0.5
+    if distance <= player_radius + ball_radius:
+        # Calcular la dirección de la colisión
+        collision_dir = ((playerx - pelotax) * -1, (playery - pelotay) * -1)
+        length = math.sqrt(collision_dir[0] ** 2 + collision_dir[1] ** 2)
+
+        if length != 0:
+            # Normalizar el vector de colisión
+            collision_dir = (collision_dir[0] / length, collision_dir[1] / length)
+
+            # Aplicar un impulso a la pelota en la dirección de la colisión
+            impulse = 1  # Puedes ajustar este valor según la fuerza deseada
+            pelotaspeedx += impulse * collision_dir[0]
+            pelotaspeedy += impulse * collision_dir[1]
+
+    # Aplicar fricción
+    pelotaspeedx *= friction
+    pelotaspeedy *= friction
+
+    if show_goal_text:
+        # Ajusta la posición del texto para el Jugador 1
+        goal_text_rect.center = (1300 // 2, 300 // 2)  # Cambia las coordenadas según tus necesidades
+        screen.blit(goal_text, goal_text_rect)
+        current_time = pygame.time.get_ticks()
+        if current_time - start_time >= goal_text_duration:
+            show_goal_text = False
+
+    if show_goal_text_player2:
+        # Ajusta la posición del texto para el Jugador 2
+        goal_text_rect.center = (1300 // 2, 300 // 2)  # Cambia las coordenadas según tus necesidades
+        screen.blit(goal2_text, goal_text_rect)
+
+        # Comprueba si ha pasado el tiempo de duración de la animación
+        current_time = pygame.time.get_ticks()
+        if current_time - start_time_player2 >= goal_text_duration:
+            show_goal_text_player2 = False
+
+    # Muestra el marcador en la pantalla
+    mostrar_marcador()
+
+    # Detener la pelota si su velocidad es muy baja
+    if abs(pelotaspeedx) < 0.1 and abs(pelotaspeedy) < 0.1:
+        pelotaspeedx, pelotaspeedy = 0, 0
+
+    pygame.display.flip()
+    clock.tick(60)
+pygame.quit()
