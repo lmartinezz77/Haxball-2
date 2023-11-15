@@ -1,0 +1,94 @@
+import pygame
+import sys
+
+# Inicializar Pygame
+pygame.init()
+
+# Configuración de la pantalla
+screen_width = 1280
+screen_height = 720
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Mi Juego")
+
+# Cargar la imagen de fondo
+background_image = pygame.image.load("imagenes/menu screen.jpg")  # Reemplaza con la ruta correcta de tu imagen
+background_image = pygame.transform.scale(background_image, (screen_width, screen_height))
+
+# Colores
+white = (255, 255, 255)
+black = (0, 0, 0)
+
+# Cargar la fuente "Press Start 2P"
+font_path = "fonts/PressStart2P-Regular.ttf"  # Reemplaza con la ruta correcta de tu archivo .ttf
+font = pygame.font.Font(font_path, 36)
+
+
+# Función para dibujar texto con efecto hover
+def draw_text(text, font, color, x, y, hover=False):
+    text_surface = font.render(text, True, color if not hover else white)
+    text_rect = text_surface.get_rect()
+    text_rect.center = (x, y)
+    screen.blit(text_surface, text_rect)
+    return text_rect
+
+
+def main_menu():
+    # Dibujar la imagen de fondo
+    screen.blit(background_image, (0, 0))
+
+    # Agregar el título "Haxball 2"
+    title_font = pygame.font.Font(font_path, 48)
+    title_text = title_font.render("Haxball 2", True, white)
+    title_rect = title_text.get_rect(center=(screen_width // 2, screen_height // 4))
+    screen.blit(title_text, title_rect)
+
+    # Dibujar botones con mayor espacio entre ellos
+    jugar_rect = draw_text("Jugar", font, black, screen_width // 2, screen_height // 2 - 20)
+    opciones_rect = draw_text("Opciones", font, black, screen_width // 2, screen_height // 2 + 80)
+    salir_rect = draw_text("Salir", font, black, screen_width // 2, screen_height // 2 + 180)
+
+    # Agregar texto diagonal "BETA" en la esquina superior izquierda (más pequeño y en negro)
+    beta_font = pygame.font.Font(font_path, 18)
+    beta_text = beta_font.render("BETA", True, black)
+    beta_text = pygame.transform.rotate(beta_text, 45)
+    beta_rect = beta_text.get_rect(topleft=(10, 10))
+    screen.blit(beta_text, beta_rect)
+
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # Obtener la posición del mouse
+        x, y = pygame.mouse.get_pos()
+
+        # Comprobar si el mouse está sobre alguno de los botones
+        jugar_hover = jugar_rect.collidepoint(x, y)
+        opciones_hover = opciones_rect.collidepoint(x, y)
+        salir_hover = salir_rect.collidepoint(x, y)
+
+        # Dibujar botones con efecto hover
+        draw_text("Jugar", font, black, screen_width // 2, screen_height // 2 - 20, jugar_hover)
+        draw_text("Opciones", font, black, screen_width // 2, screen_height // 2 + 80, opciones_hover)
+        draw_text("Salir", font, black, screen_width // 2, screen_height // 2 + 180, salir_hover)
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if jugar_hover:
+                    # Lógica para el botón "Jugar"
+                    print("¡Haz clic en Jugar!")
+                elif opciones_hover:
+                    # Lógica para el botón "Opciones"
+                    print("¡Haz clic en Opciones!")
+                elif salir_hover:
+                    # Lógica para el botón "Salir"
+                    pygame.quit()
+                    sys.exit()
+
+if __name__ == "__main__":
+    main_menu()
